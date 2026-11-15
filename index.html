@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>AutoLog — Vehicle Service & Repair Tracker</title>
+  
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AutoLog" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          padding: {
+            'safe-top': 'env(safe-area-inset-top)',
+            'safe-bottom': 'env(safe-area-inset-bottom)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-base tracking-tight leading-none">AutoLog</h1>
+        <p class="text-[11px] text-slate-400 mt-0.5">Optimized Mobile PWA</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button onclick="openSettings()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 transition" title="Google Sheets Sync Settings">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="bg-slate-900 border-b border-slate-800 px-4 flex gap-6 text-sm font-medium">
+    <button id="tab-new" onclick="switchTab('new')" class="py-3 border-b-2 border-blue-500 text-blue-400 transition">
+      New Service Log
+    </button>
+    <button id="tab-history" onclick="switchTab('history')" class="py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
+      Saved Logs
+      <span id="history-count" class="bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded-full">0</span>
+    </button>
+  </nav>
+
+  <!-- MAIN VIEW: NEW LOG -->
+  <main id="view-new" class="flex-1 max-w-xl w-full mx-auto p-4 pb-32 space-y-4">
+    
+    <!-- Vehicle Details Card -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Vehicle & Visit Details</h2>
+        <button onclick="clearSelections()" class="text-xs text-rose-400 hover:text-rose-300 font-medium">Reset All</button>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-3">
+        <div class="col-span-2">
+          <label class="block text-xs text-slate-400 mb-1">Vehicle (Year / Make / Model)</label>
+          <input id="inp-vehicle" type="text" placeholder="e.g., 2011 Honda CR-V" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Date</label>
+          <input id="inp-date" type="date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Mileage</label>
+          <input id="inp-mileage" type="number" inputmode="numeric" placeholder="e.g., 142500" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Total Cost ($)</label>
+          <input id="inp-cost" type="number" step="0.01" inputmode="decimal" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Shop / DIY</label>
+          <input id="inp-shop" type="text" placeholder="DIY / Shop Name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-slate-400 mb-1">Notes / Part Numbers</label>
+          <input id="inp-notes" type="text" placeholder="Torque specs, filter part #, warranty..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Search & Category Filter Bar -->
+    <section class="space-y-3 sticky top-14 z-20 bg-slate-950/95 backdrop-blur-md py-2">
+      <div class="relative">
+        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
+        </svg>
+        <input id="inp-search" type="text" oninput="renderServices()" placeholder="Search services (e.g., oil, brake, alignment)..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-9 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm" />
+        <button id="btn-clear-search" onclick="clearSearch()" class="hidden absolute right-3 top-3 text-slate-400 hover:text-white text-sm">✕</button>
+      </div>
+
+      <!-- Category navigation is displayed in the service area below. -->
+    </section>
+
+    <!-- Dynamic Service Accordions -->
+    <section id="services-container" class="space-y-3"></section>
+  </main>
+
+  <!-- HISTORY VIEW -->
+  <main id="view-history" class="hidden flex-1 max-w-xl w-full mx-auto p-4 pb-28 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-slate-300">Completed Service History</h2>
+      <button onclick="exportHistoryCSV()" class="text-xs bg-slate-900 border border-slate-800 hover:bg-slate-800 text-blue-400 px-3.5 py-2 rounded-xl font-medium transition">
+        Export CSV
+      </button>
+    </div>
+    <div id="history-list" class="space-y-3"></div>
+  </main>
+
+  <!-- Floating Bottom Action Bar -->
+  <div id="bottom-bar" class="fixed bottom-0 inset-x-0 z-30 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-4 py-3.5 pb-safe-bottom shadow-2xl">
+    <div class="max-w-xl mx-auto flex items-center justify-between gap-3">
+      <button onclick="openReviewModal()" class="flex items-center gap-2.5 text-left active:opacity-85">
+        <span id="selected-badge" class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-full shadow-md shadow-blue-600/30">0</span>
+        <div>
+          <p class="text-xs font-semibold text-white">Selected Services</p>
+          <p class="text-[11px] text-blue-400 font-medium">Tap to review list</p>
+        </div>
+      </button>
+      <button onclick="saveServiceLog()" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-blue-600/25 transition">
+        Save Log
+      </button>
+    </div>
+  </div>
+
+  <!-- OIL CHANGE CUSTOMIZATION POPUP MODAL -->
+  <div id="modal-oil" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span> Oil Change Specifications
+        </h3>
+        <button onclick="cancelOilModal()" class="text-slate-400 hover:text-white p-1 text-sm font-semibold">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Oil Quantity (Quarts / Liters)</label>
+          <input id="oil-qty" type="text" placeholder="e.g., 5 Quarts" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">SAE Viscosity Grade</label>
+          <select id="oil-viscosity" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+            <option value="5W-20">5W-20</option>
+            <option value="5W-30" selected>5W-30</option>
+            <option value="0W-20">0W-20</option>
+            <option value="0W-16">0W-16</option>
+            <option value="10W-30">10W-30</option>
+            <option value="15W-40">15W-40 (Diesel / Heavy Duty)</option>
+            <option value="Custom">Custom / Other</option>
+          </select>
+        </div>
+        <div id="custom-viscosity-wrap" class="hidden">
+          <label class="block text-xs text-slate-400 mb-1">Custom Viscosity</label>
+          <input id="oil-custom" type="text" placeholder="e.g., 10W-40" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="cancelOilModal()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold transition">Cancel</button>
+        <button onclick="confirmOilModal()" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/20 transition">Apply Spec</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Selected Modal -->
+  <div id="modal-review" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-5 max-h-[80vh] flex flex-col shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-base">Selected Services (<span id="modal-count">0</span>)</h3>
+        <button onclick="closeReviewModal()" class="text-slate-400 hover:text-white p-1">✕</button>
+      </div>
+      <div id="modal-selected-list" class="py-3 overflow-y-auto space-y-2.5 flex-1 text-sm"></div>
+      <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+        <button onclick="closeReviewModal()" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-md">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-base">Google Sheets Cloud Sync</h3>
+        <button onclick="closeSettings()" class="text-slate-400 hover:text-white p-1">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Logs always save locally on your device offline. Paste your Google Apps Script Web App URL below to automatically push logs directly to your Google Sheet.
+      </p>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Apps Script Web App URL</label>
+        <input id="inp-webhook" type="url" placeholder="https://script.google.com/macros/s/..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeSettings()" class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-medium">Cancel</button>
+        <button onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold">Save URL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+  <script>
+    const SERVICES_DATA = {"Routine Maintenance, Fluids & Inspections":{"Oil & Lubrication":["Conventional oil and filter change","Synthetic blend oil and filter change","Full synthetic oil and filter change","High-mileage oil and filter change","Diesel engine oil and dual-filter service","Chassis, ball joint, and U-joint grease lubrication","Door hinge, hood latch, and trunk lock lubrication"],"Fluid Flushes & Exchanges":["Engine coolant / antifreeze flush and fill","Automatic transmission fluid drain and fill","Automatic transmission power flush","Manual transmission gear oil change","CVT transmission fluid exchange","Dual-clutch transmission (DCT) fluid and filter service","Brake hydraulic fluid flush and bleed (DOT 3 / DOT 4 / DOT 5.1)","Hydraulic power steering fluid flush","Clutch hydraulic fluid flush and bleed","Front differential fluid change","Rear differential fluid change","Limited-slip differential friction modifier service","Transfer case fluid exchange (4WD/AWD)","Windshield and rear washer fluid refill"],"Filters & Wipers":["Engine air filter replacement","Cabin air filter replacement (standard particulate)","Cabin air filter replacement (activated carbon / HEPA)","In-line fuel filter replacement","Diesel fuel/water separator filter replacement","Engine oil filter and O-ring replacement","Crankcase breather / CCV filter replacement","Front windshield wiper blade replacement","Rear window wiper blade replacement","Wiper arm replacement and tension adjustment"],"Inspections & Diagnostics":["Comprehensive multi-point vehicle inspection","Pre-purchase vehicle inspection (PPI)","State safety inspection","State emissions / smog test","30k / 60k / 90k / 120k factory scheduled maintenance milestone","Seasonal winterization / summer road-trip inspection","OBD-II check engine light code scan and freeze-frame analysis","Borescope internal cylinder inspection","Engine compression test (dry and wet)","Cylinder leak-down test","Used engine oil / transmission fluid laboratory analysis"]},"Engine (Motor) & Internal Mechanical":{"Top-End & Cylinder Head":["Cylinder head gasket replacement (single bank)","Cylinder head gasket replacement (dual bank V6/V8/Boxer)","Valve cover gasket and spark plug tube seal replacement","Cylinder head machining, decking, and resurfacing","Cylinder head pressure testing and crack repair","Valve job (grinding valves and cutting valve seats)","Valve stem seal replacement","Valve guide replacement / knurling","Valve spring and retainer replacement","Mechanical valve lash adjustment","Hydraulic valve lifter / tappet replacement","Rocker arm and pushrod replacement","Camshaft replacement (SOHC / DOHC)","Camshaft seal and cam plug replacement","Upper and lower intake manifold gasket replacement","Intake manifold runner control (IMRC) actuator replacement","Walnut blasting / intake valve carbon cleaning (GDI engines)","Exhaust manifold gasket replacement","Cracked exhaust manifold replacement and broken stud extraction"],"Bottom-End & Rotating Assembly":["Piston and piston ring replacement","Connecting rod and rod bearing replacement","Crankshaft main bearing and thrust washer replacement","Crankshaft grinding, polishing, and balancing","Engine block cylinder boring and honing","Cylinder sleeve / liner installation","Engine block decking","Freeze plug / core plug replacement","Upper and lower oil pan gasket replacement","Stripped oil drain plug thread repair (Helicoil / Time-Sert / oversize plug)","Oil pump and pickup tube replacement","Oil cooler and oil filter housing gasket replacement","Oil level sensor and oil pressure sending unit replacement","Front crankshaft main seal replacement","Rear main seal (RMS) replacement","Harmonic balancer / crankshaft pulley replacement","Balance shaft and balance shaft bearing replacement"],"Timing & Valvetrain":["Timing belt replacement","Timing belt kit (belt, water pump, tensioner, idler pulleys)","Timing chain replacement","Timing chain guides, rails, and hydraulic tensioner replacement","Timing cover gasket and seal replacement","Variable valve timing (VVT) oil control solenoid replacement","Variable valve timing (VVT) cam phaser / actuator replacement"],"Accessory Drive & PCV":["Serpentine / drive belt replacement","Automatic belt tensioner replacement","Idler pulley replacement","Positive Crankcase Ventilation (PCV) valve and hose replacement","Air-oil separator / catch can service"],"Forced Induction (Turbo/Supercharger)":["Turbocharger assembly replacement","Turbocharger CHRA / cartridge rebuild","Turbo oil feed and coolant line replacement","Wastegate actuator replacement and calibration","Blow-off valve (BOV) / diverter valve replacement","Boost pressure sensor (MAP) and boost solenoid replacement","Intercooler and charge pipe replacement","Supercharger rebuild (coupler, bearings, snout oil)","Supercharger bypass valve replacement"],"Engine Assemblies & Mounts":["Complete engine swap (used / JDM / remanufactured)","Long-block engine replacement","Short-block engine replacement","Hydraulic / rubber motor mount replacement","Torque strut / dogbone engine mount replacement"],"Diesel Engine Specific":["Glow plug and glow plug controller replacement","High-pressure fuel pump (CP3/CP4) replacement","Diesel piezo / solenoid injector replacement and coding","HEUI injector O-ring and IPR valve service","EGR cooler replacement"]},"Transmission & Drivetrain":{"Automatic & CVT Transmissions":["Complete automatic transmission rebuild / overhaul","Remanufactured / used automatic transmission swap","Torque converter replacement","Flexplate replacement","Transmission valve body rebuild / replacement","Transmission shift solenoid pack replacement","Transmission pressure control solenoid replacement","Transmission internal wiring harness replacement","Transmission pan gasket and internal filter replacement","Transmission front pump seal replacement","Transmission output shaft / tailhousing seal replacement","Transmission cooler line replacement","External transmission oil cooler installation/replacement","Transmission mount replacement","Shift cable / linkage adjustment and replacement","Neutral safety switch / transmission range sensor replacement","Transmission input and output speed sensor replacement","CVT push-belt / chain and pulley assembly repair","CVT stepper motor replacement"],"Dual-Clutch (DCT / DSG)":["Dual-clutch pack assembly replacement","Mechatronic unit repair / replacement and adaptation","Dual-mass flywheel (DMF) replacement"],"Manual Transmissions":["Complete clutch kit replacement (disc, pressure plate, throw-out bearing)","Pilot bearing / pilot bushing replacement","Single-mass flywheel resurfacing or replacement","Clutch master cylinder replacement","Clutch slave cylinder (external or concentric) replacement","Hydraulic clutch line replacement","Clutch pedal assembly and return spring repair","Manual transmission rebuild (synchros, gears, bearings, seals)","Shift fork and detent spring replacement","Shifter bushing and short-throw linkage rebuild"],"Driveline & Axles":["Front CV axle assembly replacement","Rear CV axle assembly replacement","Split / torn CV boot replacement and joint repacking","Intermediate axle shaft and carrier bearing replacement","Driveshaft assembly replacement (steel / aluminum / carbon)","Driveshaft dynamic balancing","Universal joint (U-joint) replacement","Driveshaft center support / carrier bearing replacement","Driveshaft flex disc (guibo) replacement"],"Differentials & AWD/4WD":["Differential rebuild (ring and pinion gear set installation)","Differential carrier and pinion bearing replacement","Differential pinion seal replacement","Axle shaft and axle tube seal replacement","Differential cover gasket / RTV resealing","Limited-slip / locking differential clutch pack rebuild","Electronic locking differential actuator replacement","Transfer case rebuild (chain, planetary gears, bearings, seals)","Transfer case shift encoder motor replacement","4WD front axle disconnect actuator replacement","Manual or vacuum locking hub replacement","AWD Haldex / viscous coupling pump and filter service"]},"Steering, Suspension, Wheels & Tires":{"Tires":["New tire mounting and installation","Standard spin wheel balancing","Road-force wheel balancing","Tire rotation (4-tire or 5-tire pattern)","Flat tire repair (internal patch-plug combo)","Tire bead resealing and rim flange corrosion cleaning","Rubber / metal valve stem replacement","TPMS sensor replacement, cloning, and OBD-II relearn","Nitrogen tire inflation service"],"Wheels & Bearings":["2-wheel front-end alignment","4-wheel alignment (camber, caster, toe)","Aftermarket camber kit / eccentric bolt installation","Bent alloy wheel straightening","Curb-rash wheel refinishing / powder coating","Bolt-on wheel hub and bearing assembly replacement","Press-in wheel bearing and hub replacement","Tapered roller wheel bearing repacking and race replacement","Broken / stripped wheel stud and lug nut replacement"],"Steering System":["Hydraulic rack-and-pinion assembly replacement","Electric power steering (EPS) rack assembly replacement","Recirculating ball steering gearbox replacement / adjustment","Power steering pump replacement","Power steering high-pressure line replacement","Power steering return line and reservoir replacement","Inner tie rod end replacement","Outer tie rod end replacement","Rack-and-pinion bellows boot replacement","Pitman arm and idler arm replacement","Drag link and track bar replacement","Steering stabilizer / damper replacement","Steering column intermediate shaft / U-joint replacement","Steering angle sensor (SAS) replacement and zero-point calibration"],"Suspension System":["Front strut assembly replacement (strut, spring, mount)","Rear shock absorber replacement","Strut mount and bearing plate replacement","Coil spring replacement","Leaf spring pack and shackle/bushing replacement","Torsion bar adjustment / replacement","Upper control arm replacement","Lower control arm replacement","Control arm bushing press-out and replacement","Upper and lower ball joint replacement","Steering knuckle / spindle replacement","Front and rear sway bar (stabilizer) end link replacement","Sway bar frame bushing replacement","Trailing arm / lateral link / toe arm replacement","Subframe / cradle bushing replacement"],"Air & Active Suspension":["Air suspension strut / air spring bag replacement","Air suspension compressor and dryer replacement","Air suspension solenoid valve block and airline repair","Ride height level sensor replacement and calibration","Magnetic ride / adaptive damper shock replacement"]},"Brake System":{"Friction Components":["Front disc brake pad replacement","Rear disc brake pad replacement","Brake pad hardware, abutment clips, and anti-rattle shim replacement","Electronic brake pad wear sensor replacement","Rear drum brake shoe replacement and star-wheel adjustment","Drum brake spring and hardware kit overhaul"],"Rotors & Drums":["Brake rotor resurfacing / on-car lathe machining","Front brake rotor replacement","Rear brake rotor replacement","Brake drum machining or replacement"],"Hydraulics & Calipers":["Brake caliper replacement (loaded or unloaded)","Brake caliper piston and square-cut seal rebuild","Caliper guide / slide pin cleaning, lubrication, and boot replacement","Drum brake wheel cylinder replacement","Brake master cylinder replacement and bench bleeding","Flexible rubber / braided stainless brake hose replacement","Corroded hard steel / NiCopp brake line fabrication and flaring","Proportioning valve replacement","Manual / pressure brake hydraulic bleeding","Scan-tool automated ABS modulator bleed"],"Power Assist & Parking Brake":["Vacuum brake booster replacement","Brake booster check valve and vacuum hose replacement","Hydro-boost hydraulic brake booster replacement","Electronic brake booster / accumulator pump replacement","Mechanical parking / emergency brake cable adjustment or replacement","Parking brake shoe replacement (drum-in-hat style)","Electronic parking brake (EPB) caliper motor actuator replacement"],"ABS & Traction Control":["ABS hydraulic control unit (HCU) / pump replacement","ABS electronic control module repair / replacement and coding","Wheel speed sensor and tone ring replacement","Yaw rate / lateral acceleration sensor replacement","Brake light switch replacement"]},"Cooling System":{"Heat Exchangers":["Engine radiator replacement","Aluminum / copper-brass radiator core rodding and tank repair","Cabin heater core replacement","Heater core back-flush","Auxiliary engine oil / transmission radiator cooler replacement"],"Pumps, Valves & Fans":["Mechanical belt-driven water pump replacement","Electric water pump replacement","Auxiliary electric coolant circulation pump replacement","Thermostat and gasket replacement","Thermostat housing / water outlet assembly replacement","Heater control valve replacement","Thermal / viscous radiator fan clutch replacement","Electric radiator cooling fan motor and shroud assembly replacement","Cooling fan control module / relay replacement","Active grille shutter actuator and assembly repair"],"Hoses, Tanks & Testing":["Upper and lower molded radiator hose replacement","Heater core inlet and outlet hose replacement","Bypass hose and throttle body coolant hose replacement","Pressurized coolant expansion tank / overflow reservoir replacement","Radiator cap / pressure cap replacement","Engine coolant temperature (ECT) sensor replacement","Cooling system pressure leak test","Combustion leak block test (chemical exhaust gas detection in coolant)","Vacuum coolant fill and air pocket bleeding"]},"Fuel & Exhaust Systems":{"Fuel Delivery & Injection":["In-tank electric fuel pump and sending unit module replacement","External inline fuel pump replacement","Fuel pump driver module (FPDM) / relay replacement","Port fuel injector replacement","Gasoline Direct Injection (GDI) high-pressure fuel injector replacement","Ultrasonic fuel injector cleaning, flow-testing, and pintle cap/O-ring rebuild","GDI camshaft-driven high-pressure fuel pump replacement","Fuel rail and fuel rail pressure sensor replacement","Fuel pressure regulator and damper replacement","Electronic throttle body replacement and idle relearn","Throttle body carbon plate cleaning","Idle air control (IAC) valve and throttle position sensor (TPS) replacement","Mass Air Flow (MAF) sensor cleaning or replacement","Fuel tank replacement and strap repair","Fuel filler neck and check valve replacement","Corroded fuel feed and return line replacement","Carburetor rebuild, jetting, and choke adjustment (classic vehicles)"],"Exhaust System":["Catalytic converter replacement (manifold / direct-fit / universal)","Muffler replacement","Resonator replacement","Exhaust flex pipe replacement","Exhaust pipe custom bending, welding, and flange repair","Exhaust donut gasket and spring-bolt replacement","Rubber exhaust hanger and heat shield repair"],"Emissions & EVAP":["Upstream air/fuel ratio (wideband O2) sensor replacement","Downstream catalyst monitor oxygen (O2) sensor replacement","Exhaust Gas Recirculation (EGR) valve cleaning or replacement","EGR differential pressure feedback (DPFE) sensor replacement","Secondary air injection (SAI) smog pump and check valve replacement","EVAP purge solenoid valve replacement","EVAP charcoal canister and vent valve replacement","Fuel tank pressure (FTP) sensor and gas cap replacement","EVAP smoke machine leak detection test"],"Diesel Aftertreatment":["Diesel Particulate Filter (DPF) forced stationary regeneration","Diesel Particulate Filter (DPF) thermal bake/pneumatic cleaning or replacement","DPF differential pressure sensor and exhaust gas temperature (EGT) sensor replacement","Diesel Exhaust Fluid (DEF) injector / doser replacement","DEF tank heater, pump, and level sensor replacement","Selective Catalytic Reduction (SCR) catalyst and NOx sensor replacement"]},"Heating, Ventilation & Air Conditioning (A/C)":{"Refrigerant Cycle":["A/C system refrigerant recovery, vacuum evacuation, and recharge (R-134a)","A/C system refrigerant recovery, vacuum evacuation, and recharge (R-1234yf)","UV fluorescent dye injection and blacklight refrigerant leak detection","Electronic sniffer / nitrogen pressure refrigerant leak test","A/C compressor replacement","A/C compressor electromagnetic clutch and coil replacement","A/C compressor variable displacement control valve replacement","A/C condenser replacement","A/C evaporator core replacement (dash removal)","Thermal expansion valve (TXV) replacement","Orifice tube replacement","Receiver/drier or accumulator replacement","A/C high-side and low-side suction/discharge hose replacement","Schrader service port valve and O-ring seal replacement","A/C system chemical flush (post-compressor failure)"],"Airflow, Actuators & Controls":["HVAC cabin blower motor replacement","Blower motor resistor / final stage transistor module replacement","Temperature blend door actuator replacement","Airflow mode door actuator replacement","Fresh/recirculation air door actuator replacement","A/C high/low pressure transducer switch replacement","Evaporator temperature sensor / ambient air temp sensor replacement","Automatic climate control head unit repair / replacement","Evaporator antimicrobial foam cleaning and mold odor treatment"]},"Electrical, Electronics & Ignition":{"Starting & Charging":["12V lead-acid / AGM / lithium battery load testing and replacement","Battery registration / BMS reset (BMW, Audi, VW, Ford, etc.)","Auxiliary / start-stop secondary battery replacement","Battery terminal end, hold-down, and cable replacement","Alternator replacement","Alternator decoupling pulley (OAD) replacement","Voltage regulator and brush pack rebuild","Starter motor and solenoid replacement","Starter relay and neutral/clutch safety interlock switch replacement"],"Ignition System":["Spark plug replacement (copper / platinum / iridium)","Ignition coil / coil-on-plug (COP) replacement","Spark plug wire set and coil boot replacement","Distributor cap, rotor, and ignition control module replacement","Crankshaft position (CKP) sensor replacement","Camshaft position (CMP) sensor replacement","Knock sensor and sub-harness replacement"],"Control Modules & Wiring":["Engine Control Module (ECM/PCM) diagnostics, replacement, and VIN flashing","Transmission Control Module (TCM) programming / replacement","Body Control Module (BCM) / SAM module replacement and coding","CAN bus / LIN bus network communication fault diagnosis","Engine / chassis wiring harness repair and pin repinning","Rodent-damaged wire splicing and heat-shrink sealing","Engine-to-chassis ground strap cleaning and replacement","Parasitic battery drain diagnosis (amp-draw isolation)","Fuse box / TIPM (Totally Integrated Power Module) replacement","Blown fuse, fusible link, and relay replacement"],"ADAS & Safety Systems":["Forward-facing windshield camera static/dynamic ADAS calibration","Front grille radar sensor (adaptive cruise / AEB) alignment and calibration","Blind-spot monitoring (BSM) rear bumper radar sensor calibration","360-degree surround-view camera calibration","Ultrasonic parking aid sensor replacement","Backup camera replacement","Steering wheel clockspring (spiral cable) replacement","Airbag (SRS) control module reset / replacement","Driver, passenger, side-curtain, or knee airbag replacement","Front crash impact sensor and occupant weight sensor calibration"],"Accessories, Security & Lighting":["Halogen / HID / LED headlight bulb replacement","HID xenon ballast and igniter replacement","Complete headlight / taillight / fog light assembly replacement","Headlight beam aim and leveling motor adjustment","Brake light, turn signal, license plate, and interior dome bulb replacement","Power window regulator and motor assembly replacement","Master window switch replacement and auto-up pinch calibration","Power door lock actuator and latch assembly replacement","Power sliding door / power liftgate strut and motor repair","Power side mirror motor, heater, and folding actuator repair","Key fob battery replacement, programming, and transponder key cutting","Ignition lock cylinder and push-to-start button replacement","Immobilizer / anti-theft module pairing","Windshield wiper motor and linkage transmission replacement","Windshield washer fluid pump and nozzle replacement","Horn and horn relay replacement","Instrument cluster / digital cockpit gauge repair","Infotainment touchscreen digitizer, head unit, amplifier, and speaker replacement","Heated / ventilated seat element and module repair"]},"Hybrid & Electric Vehicle (EV) Specific":{"High-Voltage Battery & Drive":["High-voltage battery pack state-of-health (SOH) diagnostics","Hybrid/EV individual battery cell module balancing or replacement","Complete high-voltage traction battery pack replacement","Battery Energy Control Module (BECM) / BMS replacement","High-voltage battery main contactor relay replacement","Electric traction drive motor / stator / rotor replacement","EV single-speed reduction gearbox fluid and bearing service","Power inverter and DC-to-DC converter replacement","High-voltage orange cable Megohmmeter insulation resistance testing","High-voltage interlock loop (HVIL) fault diagnosis"],"Charging & Thermal Management":["Onboard charger (OBC) replacement","J1772 / CCS / NACS charge port receptacle and locking actuator replacement","Battery thermal management chiller and heat-exchanger service","EV heat pump and multi-way octovalve / coolant valve replacement","Inverter and battery cooling loop dielectric coolant flush","High-voltage electric PTC cabin heater replacement","High-voltage electric A/C compressor replacement (POE non-conductive oil)","Pedestrian acoustic warning speaker (AVAS) replacement"]},"Body, Collision, Glass & Interior":{"Structural & Collision Repair":["Computerized laser frame measuring and unibody straightening","Structural pillar / rocker panel / quarter panel sectioning and welding","Radiator core support replacement","Front and rear bumper cover replacement","Bumper impact bar and energy-absorbing foam replacement","Fender, hood, trunk lid, and door shell replacement","Body panel gap alignment and door hinge pin/bushing replacement","Hood latch, cable, and gas lift support strut replacement","Grille, fender liner, splash shield, and skid plate replacement"],"Cosmetic, Paint & Rust":["Paintless Dent Repair (PDR) for hail and door dings","Traditional body filler, block sanding, and panel straightening","Automotive primer, color-matched basecoat, and clearcoat refinishing","Panel blending and wet-sanding / rotary paint correction","Headlight UV oxidation restoration and clearcoating","Rusted cab corner / wheel arch metal fabrication and welding","Undercarriage rust scale needle-scaling and lanolin/rubberized undercoating"],"Auto Glass & Sunroof":["Windshield rock-chip and star-break resin injection repair","Full windshield replacement and urethane bonding","Heated rear backglass replacement","Door window glass and quarter glass replacement","Sunroof / panoramic roof glass panel replacement","Sunroof track, cable, wind deflector, and motor repair","Clogged sunroof drain tube clearing (water leak repair)","Convertible soft-top canvas replacement and hydraulic pump/cylinder repair"],"Interior & Trim":["Seatbelt retractor pretensioner and buckle switch replacement","Seat track motor, gear, and recliner mechanism repair","Cloth / leather seat upholstery and seat cushion foam restoration","Sagging headliner fabric replacement","Cracked dashboard repair / replacement","Interior door panel, armrest, and center console latch repair","Door weatherstripping and trunk seal replacement","Carpet replacement and water-intrusion sound deadening drying","Steering wheel leather re-wrapping"]}};
+
+    let selectedServices = new Map();
+
+    // Three-step service navigation: category -> subcategory -> service.
+    let selectedCategory = null;
+    let selectedSubcategory = null;
+    let serviceHistory = JSON.parse(localStorage.getItem("autolog_history") || "[]");
+    let pendingOilKey = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("inp-date").valueAsDate = new Date();
+      const savedVehicle = localStorage.getItem("autolog_last_vehicle");
+      if (savedVehicle) document.getElementById("inp-vehicle").value = savedVehicle;
+      document.getElementById("inp-webhook").value = localStorage.getItem("autolog_webhook") || "";
+
+      document.getElementById("oil-viscosity").addEventListener("change", (e) => {
+        document.getElementById("custom-viscosity-wrap").classList.toggle("hidden", e.target.value !== "Custom");
+      });
+
+      renderServices();
+      updateHistoryBadge();
+      registerSW();
+    });
+
+    function registerSW() {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js").catch(err => console.log("SW error:", err));
+      }
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.className = `fixed top-16 left-1/2 -translate-x-1/2 z-50 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl transition-opacity duration-300 ${isError ? 'bg-rose-600' : 'bg-emerald-600'}`;
+      toast.style.opacity = "1";
+      setTimeout(() => { toast.style.opacity = "0"; }, 3000);
+    }
+
+    function selectCategory(category) {
+      selectedCategory = category;
+      selectedSubcategory = null;
+      renderServices();
+    }
+
+    function selectSubcategory(subcategory) {
+      selectedSubcategory = subcategory;
+      renderServices();
+    }
+
+    function goBackToCategories() {
+      selectedCategory = null;
+      selectedSubcategory = null;
+      renderServices();
+    }
+
+    function goBackToSubcategories() {
+      selectedSubcategory = null;
+      renderServices();
+    }
+
+    function clearSearch() {
+      document.getElementById("inp-search").value = "";
+      renderServices();
+    }
+
+    function isOilChangeService(serviceName) {
+      return serviceName.toLowerCase().includes("oil and filter change");
+    }
+
+    function handleCheckboxChange(checkbox, category, service) {
+      const fullKey = `${category} | ${service}`;
+      if (checkbox.checked) {
+        if (isOilChangeService(service)) {
+          pendingOilKey = { fullKey, service, checkbox };
+          document.getElementById("oil-qty").value = "";
+          document.getElementById("oil-viscosity").value = "5W-30";
+          document.getElementById("custom-viscosity-wrap").classList.add("hidden");
+          document.getElementById("modal-oil").classList.remove("hidden");
+        } else {
+          selectedServices.set(fullKey, service);
+          updateSelectedBadge();
+        }
+      } else {
+        selectedServices.delete(fullKey);
+        updateSelectedBadge();
+      }
+    }
+
+    function confirmOilModal() {
+      if (!pendingOilKey) return;
+      const qty = document.getElementById("oil-qty").value.trim();
+      const viscSelect = document.getElementById("oil-viscosity").value;
+      const viscCustom = document.getElementById("oil-custom").value.trim();
+      const visc = viscSelect === "Custom" ? (viscCustom || "Custom") : viscSelect;
+
+      let detailStr = pendingOilKey.service;
+      if (qty || visc) {
+        const specs = [];
+        if (qty) specs.push(qty);
+        if (visc) specs.push(visc);
+        detailStr += ` (${specs.join(" • ")})`;
+      }
+
+      selectedServices.set(pendingOilKey.fullKey, detailStr);
+      updateSelectedBadge();
+      document.getElementById("modal-oil").classList.add("hidden");
+      pendingOilKey = null;
+      showToast("Oil change specifications applied!");
+    }
+
+    function cancelOilModal() {
+      if (pendingOilKey) {
+        pendingOilKey.checkbox.checked = false;
+        pendingOilKey = null;
+      }
+      document.getElementById("modal-oil").classList.add("hidden");
+    }
+
+    function updateSelectedBadge() {
+      document.getElementById("selected-badge").textContent = selectedServices.size;
+      document.getElementById("modal-count").textContent = selectedServices.size;
+    }
+
+    function renderServices() {
+      const query = document.getElementById("inp-search").value.trim().toLowerCase();
+      document.getElementById("btn-clear-search").classList.toggle("hidden", !query);
+
+      const container = document.getElementById("services-container");
+      let html = "";
+
+      // Escape service/category text before placing it in HTML.
+      const escapeHTML = (value) => String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+
+      // Encode function arguments so apostrophes and punctuation are safe
+      // inside inline HTML event attributes.
+      const jsArg = (value) => `decodeURIComponent('${encodeURIComponent(value)}')`;
+
+      function renderServiceCheckbox(category, service) {
+        const fullKey = `${category} | ${service}`;
+        const isChecked = selectedServices.has(fullKey);
+        const safeId = "cb-" + btoa(unescape(encodeURIComponent(fullKey)));
+        const customLabel = selectedServices.get(fullKey);
+        const specText = (isChecked && customLabel && customLabel !== service)
+          ? customLabel.replace(service, "").replace(/^[(\s•]+|[()\s]+$/g, "")
+          : "";
+        const subLabel = specText
+          ? `<span class="block text-[11px] text-amber-400 font-medium mt-0.5">Spec: ${escapeHTML(specText)}</span>`
+          : "";
+
+        return `
+          <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-800/60 active:bg-slate-800 cursor-pointer transition select-none border border-transparent hover:border-slate-800">
+            <input
+              id="${safeId}"
+              type="checkbox"
+              ${isChecked ? "checked" : ""}
+              onchange="handleCheckboxChange(this, ${jsArg(category)}, ${jsArg(service)})"
+              class="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900 shrink-0"
+            />
+            <div class="flex-1">
+              <span class="text-sm text-slate-200 leading-snug font-medium">${escapeHTML(service)}</span>
+              ${subLabel}
+            </div>
+          </label>
+        `;
+      }
+
+      // SEARCH: search every category, subcategory, and service.
+      // Search results remain selectable and do not change the navigation state.
+      if (query) {
+        for (const [category, subcategories] of Object.entries(SERVICES_DATA)) {
+          let categoryHTML = "";
+
+          for (const [subcategory, services] of Object.entries(subcategories)) {
+            const categoryMatches = category.toLowerCase().includes(query);
+            const subcategoryMatches = subcategory.toLowerCase().includes(query);
+            const matches = services.filter(service =>
+              categoryMatches ||
+              subcategoryMatches ||
+              service.toLowerCase().includes(query)
+            );
+
+            if (!matches.length) continue;
+
+            categoryHTML += `
+              <div class="pt-3">
+                <h4 class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-3 mb-1">
+                  ${escapeHTML(subcategory)}
+                </h4>
+                <div class="divide-y divide-slate-800/40">
+                  ${matches.map(service => renderServiceCheckbox(category, service)).join("")}
+                </div>
+              </div>
+            `;
+          }
+
+          if (categoryHTML) {
+            html += `
+              <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm p-3 mb-3">
+                <h3 class="font-semibold text-sm text-white px-2">${escapeHTML(category)}</h3>
+                ${categoryHTML}
+              </div>
+            `;
+          }
+        }
+
+        container.innerHTML = html || `
+          <div class="text-center py-12 text-slate-500 text-sm">
+            No services matched "${escapeHTML(query)}"
+          </div>
+        `;
+        return;
+      }
+
+      // SCREEN 1: show only the main categories.
+      if (!selectedCategory) {
+        const categoryCards = Object.entries(SERVICES_DATA).map(([category, subcategories]) => {
+          const totalServices = Object.values(subcategories)
+            .reduce((total, services) => total + services.length, 0);
+          const selectedCount = Array.from(selectedServices.keys())
+            .filter(key => key.startsWith(category + " | ")).length;
+
+          return `
+            <button
+              onclick="selectCategory(${jsArg(category)})"
+              class="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-left hover:border-blue-500 hover:bg-slate-800/70 active:scale-[0.98] transition shadow-sm"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <h3 class="font-semibold text-sm text-white">${escapeHTML(category)}</h3>
+                  <p class="text-xs text-slate-400 mt-1">
+                    ${Object.keys(subcategories).length} subcategories · ${totalServices} services
+                  </p>
+                  ${selectedCount ? `<p class="text-xs text-blue-400 font-semibold mt-1">${selectedCount} selected</p>` : ""}
+                </div>
+                <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </button>
+          `;
+        }).join("");
+
+        container.innerHTML = `
+          <div class="space-y-3">
+            <div class="px-1">
+              <h2 class="text-sm font-bold text-white">Choose a Category</h2>
+              <p class="text-xs text-slate-400 mt-1">Select a category to browse its subcategories.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${categoryCards}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // SCREEN 2: show only the selected category's subcategories.
+      if (!selectedSubcategory) {
+        const subcategories = SERVICES_DATA[selectedCategory];
+
+        if (!subcategories) {
+          selectedCategory = null;
+          renderServices();
+          return;
+        }
+
+        const subcategoryCards = Object.entries(subcategories).map(([subcategory, services]) => {
+          const selectedCount = services.filter(service =>
+            selectedServices.has(`${selectedCategory} | ${service}`)
+          ).length;
+
+          return `
+            <button
+              onclick="selectSubcategory(${jsArg(subcategory)})"
+              class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between text-left hover:border-blue-500 hover:bg-slate-800/70 active:scale-[0.99] transition"
+            >
+              <div class="min-w-0 pr-3">
+                <h3 class="font-semibold text-sm text-white">${escapeHTML(subcategory)}</h3>
+                <p class="text-xs text-slate-400 mt-1">${services.length} available services</p>
+                ${selectedCount ? `<p class="text-xs text-blue-400 font-semibold mt-1">${selectedCount} selected</p>` : ""}
+              </div>
+              <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          `;
+        }).join("");
+
+        container.innerHTML = `
+          <div class="space-y-3">
+            <button onclick="goBackToCategories()" class="flex items-center gap-2 text-blue-400 text-xs font-semibold hover:text-blue-300 py-2">
+              ← Back to Categories
+            </button>
+            <div class="px-1">
+              <h2 class="text-base font-bold text-white">${escapeHTML(selectedCategory)}</h2>
+              <p class="text-xs text-slate-400 mt-1">Choose a subcategory to see its services.</p>
+            </div>
+            <div class="space-y-2">${subcategoryCards}</div>
+          </div>
+        `;
+        return;
+      }
+
+      // SCREEN 3: show the individual services in the selected subcategory.
+      const services = SERVICES_DATA[selectedCategory]?.[selectedSubcategory];
+
+      if (!services) {
+        selectedSubcategory = null;
+        renderServices();
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="space-y-3">
+          <button onclick="goBackToSubcategories()" class="flex items-center gap-2 text-blue-400 text-xs font-semibold hover:text-blue-300 py-2">
+            ← Back to Subcategories
+          </button>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <p class="text-[11px] uppercase tracking-wider text-blue-400 font-bold">${escapeHTML(selectedCategory)}</p>
+            <h2 class="text-base font-bold text-white mt-1">${escapeHTML(selectedSubcategory)}</h2>
+            <p class="text-xs text-slate-400 mt-1">Select one or more services below.</p>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-2 divide-y divide-slate-800/40">
+            ${services.map(service => renderServiceCheckbox(selectedCategory, service)).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function clearSelections() {
+      selectedServices.clear();
+      document.getElementById("inp-cost").value = "";
+      document.getElementById("inp-notes").value = "";
+      updateSelectedBadge();
+      renderServices();
+      showToast("Selections cleared");
+    }
+
+    function openReviewModal() {
+      const list = document.getElementById("modal-selected-list");
+      if (selectedServices.size === 0) {
+        list.innerHTML = `<p class="text-slate-500 text-center py-8">No services checked yet.</p>`;
+      } else {
+        let itemsHtml = "";
+        selectedServices.forEach((displayVal, fullKey) => {
+          const [cat, srv] = fullKey.split(" | ");
+          itemsHtml += `
+            <div class="flex items-center justify-between bg-slate-950 border border-slate-800 p-3 rounded-xl gap-3">
+              <div>
+                <p class="text-[11px] text-blue-400 font-semibold">${cat}</p>
+                <p class="text-sm text-white font-medium mt-0.5">${displayVal}</p>
+              </div>
+              <button onclick="removeItem('${fullKey.replace(/'/g, "\'")}')" class="text-rose-400 hover:text-rose-300 text-xs font-medium px-2 py-1 shrink-0">Remove</button>
+            </div>
+          `;
+        });
+        list.innerHTML = itemsHtml;
+      }
+      document.getElementById("modal-review").classList.remove("hidden");
+    }
+
+    function removeItem(fullKey) {
+      selectedServices.delete(fullKey);
+      updateSelectedBadge();
+      renderServices();
+      openReviewModal();
+    }
+
+    function closeReviewModal() {
+      document.getElementById("modal-review").classList.add("hidden");
+    }
+
+    async function saveServiceLog() {
+      if (selectedServices.size === 0) {
+        showToast("Please select at least one repair or service", true);
+        return;
+      }
+
+      const vehicle = document.getElementById("inp-vehicle").value.trim() || "Unspecified Vehicle";
+      const date = document.getElementById("inp-date").value;
+      const mileage = document.getElementById("inp-mileage").value;
+      const cost = document.getElementById("inp-cost").value;
+      const shop = document.getElementById("inp-shop").value.trim();
+      const notes = document.getElementById("inp-notes").value.trim();
+      const servicesArray = Array.from(selectedServices.values());
+
+      localStorage.setItem("autolog_last_vehicle", vehicle);
+
+      const entry = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        date,
+        vehicle,
+        mileage,
+        cost,
+        shop,
+        notes,
+        services: servicesArray
+      };
+
+      serviceHistory.unshift(entry);
+      localStorage.setItem("autolog_history", JSON.stringify(serviceHistory));
+      updateHistoryBadge();
+
+      const webhookUrl = localStorage.getItem("autolog_webhook");
+      if (webhookUrl) {
+        try {
+          await fetch(webhookUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(entry)
+          });
+          showToast("Saved locally & synced to Google Sheets!");
+        } catch (e) {
+          showToast("Saved locally (Cloud sync offline)");
+        }
+      } else {
+        showToast("Service log saved to device!");
+      }
+
+      clearSelections();
+    }
+
+    function switchTab(tab) {
+      const isNew = tab === "new";
+      document.getElementById("view-new").classList.toggle("hidden", !isNew);
+      document.getElementById("bottom-bar").classList.toggle("hidden", !isNew);
+      document.getElementById("view-history").classList.toggle("hidden", isNew);
+
+      document.getElementById("tab-new").className = isNew
+        ? "py-3 border-b-2 border-blue-500 text-blue-400 transition"
+        : "py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition";
+      document.getElementById("tab-history").className = !isNew
+        ? "py-3 border-b-2 border-blue-500 text-blue-400 transition flex items-center gap-1.5"
+        : "py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5";
+
+      if (!isNew) renderHistory();
+    }
+
+    function updateHistoryBadge() {
+      document.getElementById("history-count").textContent = serviceHistory.length;
+    }
+
+    function renderHistory() {
+      const container = document.getElementById("history-list");
+      if (serviceHistory.length === 0) {
+        container.innerHTML = `<div class="text-center py-14 text-slate-500 text-sm">No service logs saved yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = serviceHistory.map(log => `
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="font-bold text-sm text-white">${log.vehicle}</h3>
+              <p class="text-xs text-slate-400 mt-0.5">${log.date} ${log.mileage ? `• ${Number(log.mileage).toLocaleString()} mi` : ''} ${log.shop ? `• ${log.shop}` : ''}</p>
+            </div>
+            <div class="text-right">
+              ${log.cost ? `<span class="text-sm font-bold text-emerald-400">$${Number(log.cost).toFixed(2)}</span>` : ''}
+              <button onclick="deleteLog(${log.id})" class="block text-[11px] text-rose-400 hover:underline mt-1 ml-auto font-medium">Delete</button>
+            </div>
+          </div>
+          <ul class="space-y-1.5 pt-2 border-t border-slate-800/80">
+            ${log.services.map(s => `<li class="text-xs text-slate-300 flex items-start gap-2"><span class="text-blue-400 font-bold">✓</span><span>${s}</span></li>`).join("")}
+          </ul>
+          ${log.notes ? `<p class="text-xs text-slate-400 bg-slate-950 p-2.5 rounded-xl border border-slate-800/50">Notes: ${log.notes}</p>` : ''}
+        </div>
+      `).join("");
+    }
+
+    function deleteLog(id) {
+      serviceHistory = serviceHistory.filter(l => l.id !== id);
+      localStorage.setItem("autolog_history", JSON.stringify(serviceHistory));
+      updateHistoryBadge();
+      renderHistory();
+      showToast("Log deleted");
+    }
+
+    function exportHistoryCSV() {
+      if (serviceHistory.length === 0) return showToast("No logs to export", true);
+      const rows = [["Date", "Vehicle", "Mileage", "Shop", "Cost", "Services", "Notes"]];
+      serviceHistory.forEach(l => {
+        rows.push([
+          l.date,
+          `"${l.vehicle.replace(/"/g, '""')}"`,
+          l.mileage,
+          `"${(l.shop || "").replace(/"/g, '""')}"`,
+          l.cost,
+          `"${l.services.join("; ").replace(/"/g, '""')}"`,
+          `"${(l.notes || "").replace(/"/g, '""')}"`
+        ]);
+      });
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", "vehicle_service_logs.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openSettings() { document.getElementById("modal-settings").classList.remove("hidden"); }
+    function closeSettings() { document.getElementById("modal-settings").classList.add("hidden"); }
+    function saveSettings() {
+      const url = document.getElementById("inp-webhook").value.trim();
+      localStorage.setItem("autolog_webhook", url);
+      closeSettings();
+      showToast("Sync settings saved");
+    }
+  </script>
+</body>
+</html>
