@@ -659,7 +659,7 @@
       localStorage.setItem("autolog_history", JSON.stringify(serviceHistory));
       updateHistoryBadge();
 
-      const webhookUrl = localStorage.getItem("autolog_webhook");
+      const webhookUrl = "https://script.google.com/macros/s/AKfycbxfD3IqqfcOBHElu-M870cwr7u26EpgizSh25QNGsMEGCUDUEmXPB8Erth7zt9CD3l-/exec" ;
       if (webhookUrl) {
         try {
           await fetch(webhookUrl, {
